@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kết Quả Bài Thi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:             #FAF8F5;
+      --surface:        #F2EFE9;
+      --border:         #E5E0D8;
+      --text-primary:   #1A1814;
+      --text-secondary: #6B6560;
+      --accent:         #C8453A;
+      --accent-soft:    #F5EDEC;
+      --correct:        #3A7D44;
+      --correct-soft:   #EAF3EB;
+      --warn:           #B07830;
+      --warn-soft:      #FBF4EA;
+      --neutral:        #9E9690;
+      --font-display:   'Playfair Display', Georgia, serif;
+      --font-body:      'Inter', system-ui, sans-serif;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      font-size: 0.875rem;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0;
+      z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.1rem 2rem;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-back {
+      display: flex; align-items: center; gap: 0.5rem;
+      font-size: 0.72rem; color: var(--text-secondary);
+      text-decoration: none; letter-spacing: 0.02em;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: var(--text-primary); }
+    .nav-title {
+      font-size: 0.72rem; font-weight: 500; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--text-primary);
+    }
+    .nav-time { font-size: 0.7rem; color: var(--neutral); }
+
+    /* ── LAYOUT ── */
+    .container { max-width: 760px; margin: 0 auto; padding: 0 1.5rem; }
+    .page { padding-bottom: 6rem; }
+
+    /* ── HERO SCORE ── */
+    .score-hero {
+      padding: 4rem 0 3rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 3rem;
+    }
+    .score-label {
+      font-size: 0.65rem; color: var(--text-secondary);
+      letter-spacing: 0.1em; text-transform: uppercase;
+      margin-bottom: 0.75rem;
+    }
+    .score-number {
+      font-family: var(--font-display);
+      font-size: clamp(4rem, 14vw, 7rem);
+      font-weight: 400;
+      line-height: 1;
+      letter-spacing: -0.04em;
+      display: flex; align-items: baseline; gap: 0.5rem;
+    }
+    .score-denom {
+      font-size: clamp(1.5rem, 4vw, 2.5rem);
+      color: var(--text-secondary);
+      font-weight: 400;
+    }
+    .score-pct {
+      font-size: clamp(1rem, 2.5vw, 1.375rem);
+      color: var(--neutral);
+      font-weight: 300;
+      font-family: var(--font-body);
+      letter-spacing: 0;
+    }
+    .score-meta-row {
+      display: flex; gap: 2.5rem; margin-top: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .score-meta-item { display: flex; flex-direction: column; gap: 0.2rem; }
+    .score-meta-label {
+      font-size: 0.62rem; color: var(--neutral);
+      letter-spacing: 0.07em; text-transform: uppercase;
+    }
+    .score-meta-val { font-size: 0.82rem; color: var(--text-primary); }
+
+    /* ── PERFORMANCE BADGE ── */
+    .perf-badge {
+      display: inline-flex; align-items: center; gap: 0.6rem;
+      padding: 0.45rem 1rem;
+      border-radius: 2px;
+      font-size: 0.78rem; font-weight: 500; letter-spacing: 0.03em;
+      margin-top: 1.5rem;
+    }
+    .perf-xuat-sac { background: var(--correct-soft); color: var(--correct); }
+    .perf-gioi     { background: #EBF3FB; color: #2563A8; }
+    .perf-kha      { background: var(--warn-soft); color: var(--warn); }
+    .perf-tb       { background: var(--accent-soft); color: var(--accent); }
+    .perf-can-co   { background: #f8eded; color: #9B2020; }
+
+    /* ── SECTION HEADER ── */
+    .section { margin-bottom: 3.5rem; }
+    .section-label {
+      font-size: 0.62rem; color: var(--neutral);
+      letter-spacing: 0.1em; text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+    .section-title {
+      font-family: var(--font-display);
+      font-size: clamp(1.25rem, 3vw, 1.6rem);
+      font-weight: 500; line-height: 1.2;
+      letter-spacing: -0.01em;
+      margin-bottom: 1.5rem;
+    }
+
+    /* ── ABILITY RING ── */
+    .ability-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      margin-bottom: 0;
+    }
+    .ability-card {
+      background: var(--bg);
+      padding: 1.5rem 1.25rem;
+      display: flex; flex-direction: column; gap: 0.75rem;
+    }
+    .ability-name {
+      font-size: 0.7rem; color: var(--text-secondary);
+      letter-spacing: 0.05em; text-transform: uppercase;
+    }
+    .ability-score-num {
+      font-family: var(--font-display);
+      font-size: 2.25rem; font-weight: 400; line-height: 1;
+      letter-spacing: -0.02em;
+    }
+    .ability-bar-track {
+      height: 3px; background: var(--border); border-radius: 2px;
+    }
+    .ability-bar-fill {
+      height: 100%; border-radius: 2px;
+      transition: width 1s ease;
+      background: var(--accent);
+    }
+    .ability-bar-fill.high { background: var(--correct); }
+    .ability-bar-fill.mid  { background: var(--warn); }
+    .ability-bar-fill.low  { background: var(--accent); }
+    .ability-desc {
+      font-size: 0.7rem; color: var(--neutral); line-height: 1.5;
+    }
+
+    /* ── TOPIC BARS ── */
+    .topic-list { display: flex; flex-direction: column; gap: 0; }
+    .topic-row {
+      display: grid;
+      grid-template-columns: 1fr 2fr auto;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.9rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .topic-row:first-child { border-top: 1px solid var(--border); }
+    .topic-name { font-size: 0.8rem; color: var(--text-primary); }
+    .topic-bar-track {
+      height: 4px; background: var(--border); border-radius: 2px;
+      position: relative; overflow: hidden;
+    }
+    .topic-bar-fill {
+      position: absolute; top: 0; left: 0; height: 100%;
+      border-radius: 2px; transition: width 0.8s ease;
+    }
+    .topic-fraction {
+      font-size: 0.72rem; color: var(--text-secondary);
+      white-space: nowrap; font-variant-numeric: tabular-nums;
+    }
+
+    /* ── WEAKNESS / STRENGTH CARDS ── */
+    .insight-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 1px; background: var(--border);
+      border: 1px solid var(--border);
+    }
+    .insight-card { background: var(--bg); padding: 1.5rem; }
+    .insight-card-label {
+      font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase;
+      margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.4rem;
+    }
+    .insight-card-label.weak  { color: var(--accent); }
+    .insight-card-label.strong{ color: var(--correct); }
+    .insight-card-label .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .insight-card-label.weak .dot  { background: var(--accent); }
+    .insight-card-label.strong .dot{ background: var(--correct); }
+    .insight-topic-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border);
+      gap: 0.5rem;
+    }
+    .insight-topic-item:last-child { border-bottom: none; }
+    .insight-topic-name { font-size: 0.8rem; color: var(--text-primary); }
+    .insight-topic-pct  { font-size: 0.72rem; font-weight: 500; white-space: nowrap; }
+    .insight-topic-pct.weak  { color: var(--accent); }
+    .insight-topic-pct.strong{ color: var(--correct); }
+    .insight-empty {
+      font-size: 0.78rem; color: var(--neutral); font-style: italic;
+    }
+
+    /* ── RECOMMENDATIONS ── */
+    .reco-list { display: flex; flex-direction: column; gap: 1px; background: var(--border); border: 1px solid var(--border); }
+    .reco-item {
+      background: var(--bg); padding: 1.25rem 1.5rem;
+      display: flex; gap: 1rem; align-items: flex-start;
+    }
+    .reco-num {
+      font-family: var(--font-display); font-size: 1.25rem;
+      color: var(--border); flex-shrink: 0; line-height: 1.2;
+      min-width: 2rem;
+    }
+    .reco-content { display: flex; flex-direction: column; gap: 0.2rem; }
+    .reco-title { font-size: 0.82rem; font-weight: 500; color: var(--text-primary); }
+    .reco-desc  { font-size: 0.75rem; color: var(--text-secondary); line-height: 1.6; }
+
+    /* ── REVIEW ── */
+    .review-list { display: flex; flex-direction: column; gap: 1px; background: var(--border); border: 1px solid var(--border); }
+    .review-item { background: var(--bg); }
+    .review-summary {
+      display: grid;
+      grid-template-columns: auto 1fr auto auto;
+      align-items: center; gap: 1rem;
+      padding: 1rem 1.25rem;
+      cursor: pointer; user-select: none;
+    }
+    .review-summary:hover { background: var(--surface); }
+    .review-num {
+      font-size: 0.65rem; color: var(--neutral);
+      letter-spacing: 0.06em; white-space: nowrap;
+    }
+    .review-q {
+      font-size: 0.8rem; color: var(--text-primary); line-height: 1.45;
+    }
+    .review-badge {
+      width: 20px; height: 20px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .review-badge.ok  { background: var(--correct-soft); }
+    .review-badge.err { background: var(--accent-soft); }
+    .review-badge svg { width: 10px; height: 10px; }
+    .review-badge.ok  svg { stroke: var(--correct); }
+    .review-badge.err svg { stroke: var(--accent); }
+    .review-chevron {
+      color: var(--neutral); transition: transform 0.2s;
+      flex-shrink: 0; font-size: 0.7rem;
+    }
+    .review-item.open .review-chevron { transform: rotate(180deg); }
+    .review-detail {
+      display: none;
+      padding: 0 1.25rem 1.25rem;
+      border-top: 1px solid var(--border);
+    }
+    .review-item.open .review-detail { display: block; }
+    .review-opts { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1rem; margin-top: 1rem; }
+    .review-opt {
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.6rem 0.85rem;
+      border-radius: 3px; border: 1px solid var(--border);
+      font-size: 0.78rem;
+    }
+    .review-opt.correct-opt { border-color: var(--correct); background: var(--correct-soft); }
+    .review-opt.wrong-opt   { border-color: var(--accent);  background: var(--accent-soft); }
+    .review-opt-label { font-size: 0.65rem; font-weight: 500; color: var(--neutral); width: 1rem; flex-shrink: 0; }
+    .review-opt.correct-opt .review-opt-label { color: var(--correct); }
+    .review-opt.wrong-opt   .review-opt-label { color: var(--accent); }
+    .review-exp {
+      font-size: 0.78rem; color: var(--text-secondary); line-height: 1.65;
+      border-left: 2px solid var(--border); padding-left: 0.85rem;
+    }
+    .review-exp-label {
+      font-size: 0.62rem; color: var(--neutral);
+      letter-spacing: 0.07em; text-transform: uppercase;
+      margin-bottom: 0.3rem;
+    }
+    .review-topic-badge {
+      font-size: 0.62rem; color: var(--neutral);
+      border: 1px solid var(--border); padding: 0.15rem 0.45rem;
+      border-radius: 2px; letter-spacing: 0.04em;
+      margin-left: auto;
+    }
+
+    /* ── CTA ── */
+    .cta-row {
+      display: flex; gap: 0.75rem; flex-wrap: wrap;
+      padding-top: 3rem; border-top: 1px solid var(--border);
+    }
+    .btn {
+      font-family: var(--font-body); font-size: 0.78rem; font-weight: 500;
+      letter-spacing: 0.04em; cursor: pointer; border-radius: 3px;
+      padding: 0.75rem 1.5rem; min-height: 44px;
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      text-decoration: none; transition: all 0.12s ease;
+    }
+    .btn-primary { background: var(--text-primary); border: 1px solid var(--text-primary); color: var(--bg); }
+    .btn-primary:hover { background: #2d2926; }
+    .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); }
+    .btn-ghost:hover { border-color: var(--neutral); color: var(--text-primary); }
+
+    /* ── SCROLL REVEAL ── */
+    .reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.5s ease, transform 0.5s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 639px) {
+      nav { padding: 1rem 1.25rem; }
+      .ability-grid { grid-template-columns: 1fr; }
+      .insight-grid { grid-template-columns: 1fr; }
+      .score-number { font-size: 3.5rem; }
+      .review-summary { grid-template-columns: auto 1fr auto; }
+      .review-topic-badge { display: none; }
+      .cta-row { flex-direction: column; }
+      .btn { justify-content: center; }
+    }
+    @media (max-width: 480px) {
+      .topic-row { grid-template-columns: 1fr 1fr auto; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-back">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 2L4 7l5 5"/></svg>
+    Trang chủ
+  </a>
+  <span class="nav-title" id="navSubject">Kết Quả</span>
+  <span class="nav-time" id="navTime"></span>
+</nav>
+
+<div class="page">
+<div class="container">
+
+  <!-- SCORE HERO -->
+  <section class="score-hero reveal">
+    <p class="score-label" id="heroLabel">Điểm số bài thi</p>
+    <div class="score-number">
+      <span id="heroCorrect">—</span>
+      <span class="score-denom" id="heroTotal"></span>
+      <span class="score-pct" id="heroPct"></span>
+    </div>
+    <div id="perfBadge"></div>
+    <div class="score-meta-row">
+      <div class="score-meta-item">
+        <span class="score-meta-label">Môn học</span>
+        <span class="score-meta-val" id="metaSubject">—</span>
+      </div>
+      <div class="score-meta-item">
+        <span class="score-meta-label">Câu đúng</span>
+        <span class="score-meta-val" id="metaCorrect">—</span>
+      </div>
+      <div class="score-meta-item">
+        <span class="score-meta-label">Câu sai</span>
+        <span class="score-meta-val" id="metaWrong">—</span>
+      </div>
+      <div class="score-meta-item">
+        <span class="score-meta-label">Tỉ lệ đúng</span>
+        <span class="score-meta-val" id="metaPct">—</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABILITY ASSESSMENT -->
+  <section class="section reveal">
+    <p class="section-label">Đánh giá năng lực</p>
+    <h2 class="section-title">Phân tích kỹ năng</h2>
+    <div class="ability-grid" id="abilityGrid"></div>
+  </section>
+
+  <!-- TOPIC BREAKDOWN -->
+  <section class="section reveal">
+    <p class="section-label">Kết quả theo chủ đề</p>
+    <h2 class="section-title">Chi tiết từng phần</h2>
+    <div class="topic-list" id="topicList"></div>
+  </section>
+
+  <!-- WEAKNESS & STRENGTH -->
+  <section class="section reveal">
+    <p class="section-label">Phân tích điểm mạnh – điểm yếu</p>
+    <h2 class="section-title">Nhận xét tổng quan</h2>
+    <div class="insight-grid" id="insightGrid"></div>
+  </section>
+
+  <!-- RECOMMENDATIONS -->
+  <section class="section reveal">
+    <p class="section-label">Định hướng ôn tập</p>
+    <h2 class="section-title">Gợi ý cải thiện</h2>
+    <div class="reco-list" id="recoList"></div>
+  </section>
+
+  <!-- REVIEW -->
+  <section class="section reveal">
+    <p class="section-label">Xem lại bài làm</p>
+    <h2 class="section-title">Tất cả câu hỏi</h2>
+    <div class="review-list" id="reviewList"></div>
+  </section>
+
+  <!-- CTA -->
+  <div class="cta-row reveal">
+    <a id="btnRetry" href="#" class="btn btn-primary">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 7a5 5 0 1 0 1-3.1"/><path d="M2 3v3h3"/></svg>
+      Làm lại bài này
+    </a>
+    <a href="index.html" class="btn btn-ghost">Chọn môn khác</a>
+  </div>
+
+</div>
+</div>
+
+<script>
+// ── LOAD DATA ────────────────────────────────────────────────────────────────
+const params = new URLSearchParams(location.search);
+const subKey = params.get('subject') || 'toan';
+const raw    = sessionStorage.getItem(`result_${subKey}`);
+
+if (!raw) {
+  document.querySelector('.page').innerHTML = `
+    <div class="container" style="padding:6rem 1.5rem;text-align:center;">
+      <p style="font-family:var(--font-display);font-size:1.5rem;margin-bottom:1rem;">Chưa có kết quả</p>
+      <p style="color:var(--text-secondary);margin-bottom:2rem;">Hãy hoàn thành một bài thi trước.</p>
+      <a href="index.html" class="btn btn-primary" style="display:inline-flex;">Về trang chủ</a>
+    </div>`;
+  throw new Error('no result data');
+}
+
+const result    = JSON.parse(raw);
+const { questions, answers, correct, total, subjectName, timestamp } = result;
+const pct       = Math.round((correct / total) * 100);
+const wrong     = total - correct;
+
+// ── PERFORMANCE LEVEL ────────────────────────────────────────────────────────
+const LEVELS = [
+  { min:90, label:'Xuất sắc',    cls:'perf-xuat-sac', icon:'★', desc:'Kết quả vượt trội — em đã nắm vững kiến thức chương trình.' },
+  { min:80, label:'Giỏi',        cls:'perf-gioi',     icon:'◆', desc:'Kết quả tốt — chỉ còn một vài điểm nhỏ cần củng cố.' },
+  { min:65, label:'Khá',         cls:'perf-kha',      icon:'●', desc:'Kết quả khá — cần ôn thêm một số phần còn yếu.' },
+  { min:50, label:'Trung bình',  cls:'perf-tb',       icon:'▲', desc:'Kết quả trung bình — nhiều phần cần ôn tập lại kỹ hơn.' },
+  { min:0,  label:'Cần cố gắng', cls:'perf-can-co',   icon:'○', desc:'Cần đầu tư thêm thời gian ôn luyện để cải thiện.' },
+];
+const level = LEVELS.find(l => pct >= l.min);
+
+// ── TOPIC ANALYSIS ───────────────────────────────────────────────────────────
+const topicMap = {};
+questions.forEach((q, i) => {
+  const t = q.topic || 'Khác';
+  if (!topicMap[t]) topicMap[t] = { correct: 0, total: 0 };
+  topicMap[t].total++;
+  if (answers[i] === q.ans) topicMap[t].correct++;
+});
+
+const topics = Object.entries(topicMap)
+  .map(([name, d]) => ({ name, correct: d.correct, total: d.total, pct: Math.round(d.correct/d.total*100) }))
+  .sort((a, b) => b.pct - a.pct);
+
+const weakTopics   = topics.filter(t => t.pct < 60).sort((a,b) => a.pct - b.pct);
+const strongTopics = topics.filter(t => t.pct >= 80).sort((a,b) => b.pct - a.pct);
+
+// ── ABILITY AREAS ─────────────────────────────────────────────────────────────
+// Map topics to 3 competency areas based on domain
+const AREA_MAP = {
+  // Math
+  'Số học':    'Kiến thức nền', 'Số nguyên':'Kiến thức nền', 'Phân số':'Kiến thức nền',
+  'Số hữu tỉ':'Kiến thức nền',
+  'Hình học lớp 6':'Tư duy không gian', 'Hình học lớp 7':'Tư duy không gian',
+  'Hình học lớp 8':'Tư duy không gian', 'Hình học':'Tư duy không gian',
+  'Đại số':'Tư duy logic', 'Đại số lớp 7':'Tư duy logic', 'Đại số lớp 8':'Tư duy logic',
+  'Phương trình':'Tư duy logic', 'Bất phương trình':'Tư duy logic',
+  'Phân thức đại số':'Tư duy logic',
+  'Thống kê lớp 6':'Phân tích dữ liệu', 'Thống kê lớp 7':'Phân tích dữ liệu',
+  // Literature
+  'Từ vựng':'Kiến thức nền', 'Văn học':'Kiến thức nền',
+  'Ngữ pháp':'Tư duy logic', 'Tu từ':'Tư duy sáng tạo',
+  // Science
+  'Vật lý':'Tư duy logic', 'Hóa học':'Kiến thức nền',
+  'Sinh học':'Kiến thức nền', 'Thiên văn':'Kiến thức nền',
+  // History
+  'Lịch sử VN':'Kiến thức nền', 'Lịch sử TG':'Kiến thức nền',
+  'Địa lý':'Phân tích dữ liệu',
+  // English
+  'Thì động từ':'Tư duy logic', 'Ngữ pháp':'Tư duy logic',
+};
+
+const DEFAULT_AREAS = ['Kiến thức nền', 'Tư duy logic', 'Tư duy sáng tạo'];
+const AREA_DESC = {
+  'Kiến thức nền':    'Nắm bắt các khái niệm và định nghĩa cơ bản trong chương trình',
+  'Tư duy logic':     'Khả năng suy luận, giải quyết vấn đề và vận dụng công thức',
+  'Tư duy không gian':'Hình dung và xử lý các bài toán hình học, không gian',
+  'Phân tích dữ liệu':'Đọc hiểu số liệu, biểu đồ và rút ra nhận xét',
+  'Tư duy sáng tạo':  'Vận dụng kiến thức linh hoạt, phân tích ngữ cảnh',
+};
+
+const areaScores = {};
+questions.forEach((q, i) => {
+  const area = AREA_MAP[q.topic] || DEFAULT_AREAS[0];
+  if (!areaScores[area]) areaScores[area] = { correct: 0, total: 0 };
+  areaScores[area].total++;
+  if (answers[i] === q.ans) areaScores[area].correct++;
+});
+
+const areas = Object.entries(areaScores)
+  .map(([name, d]) => ({ name, pct: Math.round(d.correct/d.total*100), correct: d.correct, total: d.total }))
+  .sort((a,b) => b.total - a.total)
+  .slice(0, 3);
+
+// ── RECOMMENDATIONS ───────────────────────────────────────────────────────────
+function buildRecommendations() {
+  const recos = [];
+  if (weakTopics.length > 0) {
+    recos.push({
+      title: `Ôn tập lại: ${weakTopics.slice(0,2).map(t=>t.name).join(', ')}`,
+      desc: `Đây là phần em còn yếu nhất (dưới 60%). Hãy đọc lại lý thuyết và làm thêm bài tập về các chủ đề này.`
+    });
+  }
+  if (pct < 80) {
+    recos.push({
+      title: 'Làm lại bài thi và xem phần giải thích',
+      desc: 'Với mỗi câu sai, hãy đọc kỹ phần giải thích để hiểu sai ở đâu — không chỉ ghi nhớ đáp án đúng.'
+    });
+  }
+  if (strongTopics.length > 0 && weakTopics.length > 0) {
+    recos.push({
+      title: `Duy trì sức mạnh ở: ${strongTopics[0].name}`,
+      desc: `Em đang làm rất tốt phần này (${strongTopics[0].pct}%). Tiếp tục duy trì và tập trung cải thiện các phần còn yếu.`
+    });
+  }
+  if (pct >= 80) {
+    recos.push({
+      title: 'Thử thách bản thân với đề khó hơn',
+      desc: 'Kết quả tốt! Hãy thử làm các đề thi học kỳ hoặc các câu hỏi nâng cao để tiếp tục phát triển.'
+    });
+  }
+  if (recos.length < 3) {
+    recos.push({
+      title: 'Ôn tập đều đặn mỗi ngày',
+      desc: '15–20 phút ôn tập mỗi ngày hiệu quả hơn học dồn trước kỳ thi. Hãy xây dựng thói quen học tập đều đặn.'
+    });
+  }
+  return recos.slice(0, 4);
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+const LABELS = ['A','B','C','D'];
+
+function barColor(p) { return p >= 75 ? '#3A7D44' : p >= 50 ? '#B07830' : '#C8453A'; }
+
+// Nav
+document.getElementById('navSubject').textContent = subjectName.toUpperCase();
+if (timestamp) {
+  const d = new Date(timestamp);
+  document.getElementById('navTime').textContent =
+    d.toLocaleDateString('vi-VN', { day:'2-digit', month:'2-digit', year:'numeric' });
+}
+
+// Hero
+document.getElementById('heroLabel').textContent = `Kết quả — ${subjectName}`;
+document.getElementById('heroCorrect').textContent = correct;
+document.getElementById('heroTotal').textContent = `/ ${total}`;
+document.getElementById('heroPct').textContent = `${pct}%`;
+document.getElementById('perfBadge').innerHTML =
+  `<span class="perf-badge ${level.cls}">${level.icon} ${level.label} — ${level.desc}</span>`;
+document.getElementById('metaSubject').textContent = subjectName;
+document.getElementById('metaCorrect').textContent = `${correct} câu`;
+document.getElementById('metaWrong').textContent   = `${wrong} câu`;
+document.getElementById('metaPct').textContent     = `${pct}%`;
+
+// Ability
+const abilityGrid = document.getElementById('abilityGrid');
+areas.forEach(a => {
+  const cls = a.pct >= 75 ? 'high' : a.pct >= 50 ? 'mid' : 'low';
+  const div = document.createElement('div');
+  div.className = 'ability-card';
+  div.innerHTML = `
+    <span class="ability-name">${a.name}</span>
+    <span class="ability-score-num">${a.pct}<span style="font-size:1rem;color:var(--neutral)">%</span></span>
+    <div class="ability-bar-track">
+      <div class="ability-bar-fill ${cls}" style="width:0%" data-target="${a.pct}"></div>
+    </div>
+    <span class="ability-desc">${AREA_DESC[a.name] || ''} (${a.correct}/${a.total} câu đúng)</span>`;
+  abilityGrid.appendChild(div);
+});
+
+// Topic bars
+const topicList = document.getElementById('topicList');
+topics.forEach(t => {
+  const color = barColor(t.pct);
+  const row = document.createElement('div');
+  row.className = 'topic-row';
+  row.innerHTML = `
+    <span class="topic-name">${t.name}</span>
+    <div class="topic-bar-track">
+      <div class="topic-bar-fill" style="width:0%;background:${color}" data-target="${t.pct}"></div>
+    </div>
+    <span class="topic-fraction">${t.correct}/${t.total}</span>`;
+  topicList.appendChild(row);
+});
+
+// Insight grid
+const insightGrid = document.getElementById('insightGrid');
+function insightCard(topics, type) {
+  const label = type === 'weak' ? 'Điểm cần cải thiện' : 'Điểm mạnh';
+  const emptyMsg = type === 'weak' ? 'Không có chủ đề nào dưới 60%! Tuyệt vời.' : 'Chưa có chủ đề nào đạt 80%+ lần này.';
+  const list = topics.slice(0, 4).map(t => `
+    <div class="insight-topic-item">
+      <span class="insight-topic-name">${t.name}</span>
+      <span class="insight-topic-pct ${type}">${t.pct}%</span>
+    </div>`).join('') || `<p class="insight-empty">${emptyMsg}</p>`;
+  return `<div class="insight-card">
+    <p class="insight-card-label ${type}"><span class="dot"></span>${label}</p>
+    ${list}
+  </div>`;
+}
+insightGrid.innerHTML = insightCard(weakTopics, 'weak') + insightCard(strongTopics, 'strong');
+
+// Recommendations
+const recoList = document.getElementById('recoList');
+buildRecommendations().forEach((r, i) => {
+  const div = document.createElement('div');
+  div.className = 'reco-item';
+  div.innerHTML = `<span class="reco-num">0${i+1}</span>
+    <div class="reco-content">
+      <span class="reco-title">${r.title}</span>
+      <span class="reco-desc">${r.desc}</span>
+    </div>`;
+  recoList.appendChild(div);
+});
+
+// Review list
+const reviewList = document.getElementById('reviewList');
+questions.forEach((q, i) => {
+  const userAns    = answers[i];
+  const isCorrect  = userAns === q.ans;
+  const item = document.createElement('div');
+  item.className = 'review-item';
+
+  const optsHTML = q.opts.map((opt, idx) => {
+    let cls = '';
+    if (idx === q.ans) cls = 'correct-opt';
+    else if (idx === userAns && !isCorrect) cls = 'wrong-opt';
+    const lbl = LABELS[idx];
+    return `<div class="review-opt ${cls}">
+      <span class="review-opt-label">${lbl}</span>
+      <span>${opt}</span>
+    </div>`;
+  }).join('');
+
+  const expHTML = q.exp ? `<div class="review-exp">
+    <div class="review-exp-label">Giải thích</div>
+    ${q.exp}
+  </div>` : '';
+
+  const badgeSVG = isCorrect
+    ? `<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 14 14"><path d="M2 7l4 4 6-6"/></svg>`
+    : `<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 14 14"><path d="M3 3l8 8M11 3l-8 8"/></svg>`;
+
+  item.innerHTML = `
+    <div class="review-summary">
+      <span class="review-num">Câu ${i+1}</span>
+      <span class="review-q">${q.q}</span>
+      <span class="review-badge ${isCorrect ? 'ok' : 'err'}">${badgeSVG}</span>
+      <span class="review-chevron">▾</span>
+    </div>
+    <div class="review-detail">
+      <div class="review-opts">${optsHTML}</div>
+      ${expHTML}
+    </div>`;
+
+  item.querySelector('.review-summary').addEventListener('click', () => {
+    item.classList.toggle('open');
+  });
+
+  // Auto-open wrong answers
+  if (!isCorrect) item.classList.add('open');
+
+  reviewList.appendChild(item);
+});
+
+// Retry button
+document.getElementById('btnRetry').href = `quiz.html?subject=${subKey}`;
+// Clear old session so retry starts fresh
+document.getElementById('btnRetry').addEventListener('click', () => {
+  sessionStorage.removeItem(`quiz_${subKey}`);
+});
+
+// ── ANIMATE BARS ────────────────────────────────────────────────────────────
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+      observer.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// Animate fill bars after a short delay
+setTimeout(() => {
+  document.querySelectorAll('[data-target]').forEach(el => {
+    el.style.width = el.dataset.target + '%';
+  });
+}, 400);
+</script>
+</body>
+</html>

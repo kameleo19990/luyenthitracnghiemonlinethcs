@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trắc Nghiệm</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:             #FAF8F5;
+      --surface:        #F2EFE9;
+      --border:         #E5E0D8;
+      --text-primary:   #1A1814;
+      --text-secondary: #6B6560;
+      --accent:         #C8453A;
+      --accent-soft:    #F5EDEC;
+      --correct:        #3A7D44;
+      --correct-soft:   #EAF3EB;
+      --incorrect:      #C8453A;
+      --incorrect-soft: #F5EDEC;
+      --neutral:        #9E9690;
+      --font-display:   'Playfair Display', Georgia, serif;
+      --font-body:      'Inter', system-ui, sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      font-size: 0.875rem;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.1rem 2rem;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-back {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      letter-spacing: 0.02em;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: var(--text-primary); }
+    .nav-back svg { flex-shrink: 0; }
+
+    .nav-subject {
+      font-size: 0.72rem;
+      color: var(--text-primary);
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .nav-progress {
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      letter-spacing: 0.02em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ── PROGRESS BAR ── */
+    .progress-bar {
+      position: fixed;
+      top: 44px; left: 0; right: 0;
+      z-index: 99;
+      height: 2px;
+      background: var(--border);
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      transition: width 0.4s ease;
+      width: 0%;
+    }
+
+    /* ── LAYOUT ── */
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    /* ── QUIZ MAIN ── */
+    .quiz-wrap {
+      padding-top: 6rem;
+      padding-bottom: 7rem;
+      min-height: 100vh;
+    }
+
+    /* ── QUESTION ── */
+    .question-block {
+      margin-bottom: 3rem;
+    }
+
+    .question-num {
+      font-size: 0.65rem;
+      color: var(--neutral);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .question-num::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .question-text {
+      font-family: var(--font-display);
+      font-size: clamp(1.25rem, 3.5vw, 1.75rem);
+      font-weight: 400;
+      line-height: 1.4;
+      letter-spacing: -0.01em;
+      color: var(--text-primary);
+    }
+
+    /* ── OPTIONS ── */
+    .options-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .option {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      padding: 1rem 1.25rem;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      cursor: pointer;
+      border-radius: 3px;
+      transition: background 0.12s ease, border-color 0.12s ease;
+      text-align: left;
+      width: 100%;
+      min-height: 44px;
+    }
+    .option:hover:not(.locked) {
+      background: var(--surface);
+      border-color: var(--neutral);
+    }
+    .option:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    .option.locked { cursor: default; }
+
+    .option-label {
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--neutral);
+      letter-spacing: 0.06em;
+      flex-shrink: 0;
+      width: 1.25rem;
+      padding-top: 0.05rem;
+    }
+
+    .option-text {
+      font-size: 0.875rem;
+      color: var(--text-primary);
+      line-height: 1.55;
+    }
+
+    .option-icon {
+      margin-left: auto;
+      flex-shrink: 0;
+      opacity: 0;
+      padding-top: 0.05rem;
+      transition: opacity 0.15s;
+    }
+
+    /* SELECTED */
+    .option.selected {
+      border-color: var(--text-primary);
+      background: var(--bg);
+    }
+    .option.selected .option-label { color: var(--text-primary); }
+
+    /* CORRECT */
+    .option.correct {
+      border-color: var(--correct);
+      background: var(--correct-soft);
+    }
+    .option.correct .option-label { color: var(--correct); }
+    .option.correct .option-icon { opacity: 1; color: var(--correct); }
+
+    /* WRONG */
+    .option.wrong {
+      border-color: var(--incorrect);
+      background: var(--incorrect-soft);
+    }
+    .option.wrong .option-label { color: var(--incorrect); }
+    .option.wrong .option-icon { opacity: 1; color: var(--incorrect); }
+
+    /* SHOW ANSWER (after wrong selection, highlight real answer) */
+    .option.show-answer {
+      border-color: var(--correct);
+      background: var(--correct-soft);
+    }
+    .option.show-answer .option-label { color: var(--correct); }
+
+    /* ── EXPLANATION ── */
+    .explanation {
+      display: none;
+      padding: 1rem 1.25rem;
+      border-left: 2px solid var(--border);
+      margin-bottom: 2.5rem;
+    }
+    .explanation.visible { display: block; }
+    .explanation-label {
+      font-size: 0.65rem;
+      color: var(--neutral);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 0.3rem;
+    }
+    .explanation-text {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      line-height: 1.65;
+    }
+
+    /* ── KEYBOARD HINT ── */
+    .keyboard-hint {
+      font-size: 0.65rem;
+      color: var(--neutral);
+      letter-spacing: 0.04em;
+      margin-bottom: 2rem;
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .key {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .key kbd {
+      font-family: var(--font-body);
+      font-size: 0.6rem;
+      border: 1px solid var(--border);
+      padding: 0.1rem 0.3rem;
+      border-radius: 2px;
+      background: var(--surface);
+      color: var(--text-secondary);
+    }
+
+    /* ── NAVIGATION BUTTONS ── */
+    .nav-buttons {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      z-index: 100;
+    }
+
+    .btn {
+      font-family: var(--font-body);
+      font-size: 0.78rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      border-radius: 3px;
+      transition: background 0.12s, color 0.12s, border-color 0.12s, opacity 0.12s;
+      padding: 0.65rem 1.25rem;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+    }
+    .btn-ghost:hover { border-color: var(--neutral); color: var(--text-primary); }
+    .btn-ghost:disabled { opacity: 0.35; cursor: default; pointer-events: none; }
+
+    .btn-primary {
+      background: var(--text-primary);
+      border: 1px solid var(--text-primary);
+      color: var(--bg);
+    }
+    .btn-primary:hover { background: #2d2926; border-color: #2d2926; }
+    .btn-primary:disabled { opacity: 0.35; cursor: default; pointer-events: none; }
+
+    .btn-finish {
+      background: var(--accent);
+      border: 1px solid var(--accent);
+      color: #fff;
+    }
+    .btn-finish:hover { background: #b03a30; border-color: #b03a30; }
+
+    /* ── SCROLL REVEAL ── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.45s ease, transform 0.45s ease;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    @media (prefers-reduced-motion: reduce) {
+      .reveal { opacity: 1; transform: none; transition: none; }
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 639px) {
+      nav { padding: 1rem 1.25rem; }
+      .nav-buttons { padding: 0.75rem 1.25rem; }
+      .option { padding: 0.875rem 1rem; }
+      .question-text { font-size: 1.2rem; }
+      .keyboard-hint { display: none; }
+    }
+
+    /* ── LOADING STATE ── */
+    .quiz-loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .loading-text {
+      font-size: 0.8rem;
+      color: var(--neutral);
+    }
+
+    /* ── EMPTY STATE ── */
+    .quiz-error {
+      text-align: center;
+      padding: 4rem 2rem;
+    }
+    .quiz-error h2 {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      margin-bottom: 0.75rem;
+    }
+    .quiz-error p {
+      color: var(--text-secondary);
+      font-size: 0.82rem;
+      margin-bottom: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="index.html" class="nav-back">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M9 2L4 7l5 5"/>
+      </svg>
+      Trang chủ
+    </a>
+    <span class="nav-subject" id="navSubject">—</span>
+    <span class="nav-progress" id="navProgress">1 / 10</span>
+  </nav>
+
+  <!-- PROGRESS BAR -->
+  <div class="progress-bar">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+
+  <!-- MAIN -->
+  <main class="quiz-wrap">
+    <div class="container" id="quizContainer">
+      <div class="quiz-loading">
+        <span class="loading-text">Đang tải câu hỏi…</span>
+      </div>
+    </div>
+  </main>
+
+  <!-- BOTTOM NAV BUTTONS -->
+  <div class="nav-buttons" id="navButtons" style="display:none;">
+    <button class="btn btn-ghost" id="btnPrev" disabled>
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M9 2L4 7l5 5"/>
+      </svg>
+      Câu trước
+    </button>
+    <button class="btn btn-primary" id="btnNext" disabled>
+      Câu tiếp
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M5 2l5 5-5 5"/>
+      </svg>
+    </button>
+  </div>
+
+  <script>
+  // ─── DATA ─────────────────────────────────────────────────────────────────
+  const DATA = {
+    toan: {
+      name: 'Toán Học',
+      questions: [
+        { topic:'Số học', grade:6, q:'Kết quả của biểu thức 3² + 4² bằng bao nhiêu?', opts:['7','14','25','49'], ans:2, exp:'3²=9 và 4²=16, nên 3²+4²=25.' },
+        { topic:'Số học', grade:6, q:'Ước chung lớn nhất của 36 và 48 là?', opts:['6','9','12','18'], ans:2, exp:'36=2²×3², 48=2⁴×3. ƯCLN=2²×3=12.' },
+        { topic:'Hình học', grade:6, q:'Hình chữ nhật dài 12cm, rộng 8cm. Diện tích là?', opts:['40 cm²','80 cm²','96 cm²','160 cm²'], ans:2, exp:'S = 12×8 = 96 cm².' },
+        { topic:'Phân số', grade:6, q:'Phân số nào bằng 3/4?', opts:['6/9','9/12','12/15','Cả 6/8 và 9/12'], ans:3, exp:'6/8=3/4 và 9/12=3/4.' },
+        { topic:'Số học', grade:6, q:'Số nguyên tố nào lớn hơn 20 và nhỏ hơn 30?', opts:['21','23','27','28'], ans:1, exp:'21=3×7; 27=3³; 28=4×7 đều là hợp số. 23 là nguyên tố.' },
+        { topic:'Hình học', grade:6, q:'Góc có số đo 135° thuộc loại nào?', opts:['Góc nhọn','Góc vuông','Góc tù','Góc bẹt'], ans:2, exp:'Góc tù: 90°<α<180°. 135° là góc tù.' },
+        { topic:'Đại số', grade:7, q:'Giải phương trình: 2x + 6 = 14. Nghiệm x = ?', opts:['x=3','x=4','x=5','x=10'], ans:1, exp:'2x=8 → x=4.' },
+        { topic:'Hình học', grade:7, q:'Tổng các góc trong một tam giác bằng?', opts:['90°','180°','270°','360°'], ans:1, exp:'Tổng ba góc tam giác = 180°.' },
+        { topic:'Số học', grade:6, q:'BCNN(8, 12) bằng?', opts:['4','24','48','96'], ans:1, exp:'8=2³; 12=2²×3. BCNN=2³×3=24.' },
+        { topic:'Phân số', grade:6, q:'2/3 + 1/6 bằng?', opts:['3/9','5/6','1/2','3/6'], ans:1, exp:'MTC=6: 4/6+1/6=5/6.' },
+        { topic:'Đại số', grade:7, q:'Thu gọn: 3x − 2y + x + 4y', opts:['4x+6y','4x+2y','2x+6y','4x−2y'], ans:1, exp:'(3+1)x+(−2+4)y=4x+2y.' },
+        { topic:'Hình học', grade:8, q:'Thể tích hình lập phương cạnh 4cm là?', opts:['16 cm³','48 cm³','64 cm³','96 cm³'], ans:2, exp:'V=a³=4³=64 cm³.' },
+        { topic:'Đại số', grade:8, q:'Giải: 5x − 15 = 2x + 3', opts:['x=4','x=5','x=6','x=7'], ans:2, exp:'3x=18 → x=6.' },
+        { topic:'Số học', grade:7, q:'(−3/4)×(−8/9) bằng?', opts:['1/3','2/3','24/36','−2/3'], ans:1, exp:'(3×8)/(4×9)=24/36=2/3.' },
+        { topic:'Hình học', grade:7, q:'Định lý Pythagore: tam giác vuông tại A thì?', opts:['AB²=BC²+AC²','BC²=AB²+AC²','AC²=AB²−BC²','AB=AC+BC'], ans:1, exp:'Cạnh huyền² = tổng bình phương hai cạnh góc vuông.' },
+      ]
+    },
+    van: {
+      name: 'Tiếng Việt',
+      questions: [
+        { topic:'Từ vựng', grade:6, q:'Câu "Mặt trời mọc ở đằng đông" có bao nhiêu từ?', opts:['4 từ','5 từ','6 từ','7 từ'], ans:1, exp:'"Mặt trời" là 1 từ ghép. Tổng: Mặt trời/mọc/ở/đằng/đông = 5 từ.' },
+        { topic:'Tu từ', grade:6, q:'Biện pháp tu từ trong "Trăng là chiếc đĩa bạc"?', opts:['So sánh','Nhân hoá','Ẩn dụ','Hoán dụ'], ans:0, exp:'So sánh ngang bằng dùng "là": trăng = chiếc đĩa bạc.' },
+        { topic:'Từ vựng', grade:6, q:'Từ nào sau đây là từ láy?', opts:['Xanh lá','Long lanh','Sách vở','Bàn ghế'], ans:1, exp:'"Long lanh" là từ láy vần (-anh). Các từ còn lại là từ ghép.' },
+        { topic:'Văn học', grade:6, q:'Tác phẩm "Dế Mèn phiêu lưu ký" của tác giả nào?', opts:['Nguyễn Nhật Ánh','Tô Hoài','Nam Cao','Nguyên Hồng'], ans:1, exp:'"Dế Mèn phiêu lưu ký" — Tô Hoài, xuất bản 1941.' },
+        { topic:'Tu từ', grade:6, q:'Câu nào dùng biện pháp nhân hoá?', opts:['Sông dài như một dải lụa','Những chú chim hót ca vui mừng đón bình minh','Bầu trời xanh trong vắt','Hoa nở rộ khắp vườn'], ans:1, exp:'Nhân hoá: gán hành động người (hót ca, vui mừng) cho loài chim.' },
+        { topic:'Ngữ pháp', grade:6, q:'Trong câu "Học sinh chăm chỉ học bài", chủ ngữ là?', opts:['Học sinh','Chăm chỉ','Học bài','Chăm chỉ học bài'], ans:0, exp:'Chủ ngữ = đối tượng thực hiện hành động: "Học sinh".' },
+        { topic:'Văn học', grade:7, q:'Bài thơ "Cảnh khuya" của tác giả nào?', opts:['Xuân Quỳnh','Tố Hữu','Hồ Chí Minh','Nguyễn Du'], ans:2, exp:'"Cảnh khuya" — Hồ Chí Minh, sáng tác tại Việt Bắc 1947.' },
+        { topic:'Tu từ', grade:7, q:'Điệp ngữ là biện pháp tu từ như thế nào?', opts:['Nói giảm nói tránh','Lặp lại từ/cụm từ có dụng ý','So sánh hai sự vật','Nhân hoá vật vô tri'], ans:1, exp:'Điệp ngữ = lặp lại từ/cụm từ để nhấn mạnh ý.' },
+        { topic:'Ngữ pháp', grade:7, q:'Câu rút gọn là câu như thế nào?', opts:['Câu chỉ có CN','Câu được lược bỏ thành phần vẫn hiểu được','Câu có nhiều VN','Câu cảm thán'], ans:1, exp:'Câu rút gọn lược bỏ CN hoặc VN mà vẫn đủ nghĩa.' },
+        { topic:'Văn học', grade:8, q:'"Lão Hạc" là tác phẩm của tác giả nào?', opts:['Tô Hoài','Ngô Tất Tố','Nam Cao','Nguyên Hồng'], ans:2, exp:'"Lão Hạc" — Nam Cao, 1943. Phản ánh số phận người nông dân nghèo.' },
+        { topic:'Văn học', grade:8, q:'"Tắt đèn" của tác giả nào?', opts:['Nam Cao','Ngô Tất Tố','Tô Hoài','Thanh Tịnh'], ans:1, exp:'"Tắt đèn" — Ngô Tất Tố. Nhân vật chính là chị Dậu.' },
+        { topic:'Tu từ', grade:8, q:'Biện pháp nói giảm nói tránh được dùng khi nào?', opts:['Nhấn mạnh ý','Tạo hình ảnh sinh động','Diễn đạt nhẹ nhàng, tế nhị','So sánh hai vật'], ans:2, exp:'Nói giảm nói tránh: tránh thô tục, thẳng thắn quá mức.' },
+        { topic:'Ngữ pháp', grade:8, q:'Câu ghép có đặc điểm gì?', opts:['Chỉ có một cụm C-V','Có hai hoặc nhiều cụm C-V','Không có chủ ngữ','Chỉ có vị ngữ'], ans:1, exp:'Câu ghép = hai hoặc nhiều cụm chủ-vị, có thể dùng từ nối.' },
+        { topic:'Từ vựng', grade:7, q:'Từ đồng nghĩa với "dũng cảm" là?', opts:['Nhút nhát','Can đảm','Hiền lành','Thông minh'], ans:1, exp:'"Can đảm" và "dũng cảm" cùng nghĩa: không sợ nguy hiểm.' },
+        { topic:'Văn học', grade:6, q:'Truyện "Thạch Sanh" thuộc thể loại nào?', opts:['Truyền thuyết','Truyện ngụ ngôn','Truyện cổ tích','Truyện cười'], ans:2, exp:'Thạch Sanh là truyện cổ tích (có phép màu, kết thúc thiện thắng ác).' },
+      ]
+    },
+    khoahoc: {
+      name: 'Khoa Học Tự Nhiên',
+      questions: [
+        { topic:'Vật lý', grade:7, q:'Chất nào sau đây dẫn điện tốt nhất?', opts:['Gỗ','Nhựa','Đồng','Thủy tinh'], ans:2, exp:'Đồng (Cu) dẫn điện rất tốt, dùng làm dây dẫn điện.' },
+        { topic:'Sinh học', grade:6, q:'Quá trình cây xanh tổng hợp chất hữu cơ nhờ ánh sáng gọi là?', opts:['Hô hấp','Quang hợp','Thoát hơi nước','Hút khoáng'], ans:1, exp:'Quang hợp: 6CO₂+6H₂O → C₆H₁₂O₆+6O₂.' },
+        { topic:'Vật lý', grade:6, q:'Đơn vị đo lực trong hệ SI là?', opts:['Kilogram (kg)','Newton (N)','Joule (J)','Watt (W)'], ans:1, exp:'Lực đo bằng Newton (N). 1N=1kg·m/s².' },
+        { topic:'Hóa học', grade:8, q:'Nguyên tố nào có số proton = 1?', opts:['Helium','Hydrogen','Lithium','Carbon'], ans:1, exp:'Hydrogen (H): Z=1, nguyên tố nhẹ nhất trong bảng tuần hoàn.' },
+        { topic:'Hóa học', grade:8, q:'Nhiệt độ sôi của nước tinh khiết ở 1 atm là?', opts:['90°C','95°C','100°C','105°C'], ans:2, exp:'Nước sôi ở 100°C (373K) tại áp suất khí quyển chuẩn.' },
+        { topic:'Thiên văn', grade:6, q:'Hệ Mặt Trời có bao nhiêu hành tinh được công nhận?', opts:['7','8','9','10'], ans:1, exp:'Từ 2006, IAU công nhận 8 hành tinh (Sao Diêm Vương bị loại).' },
+        { topic:'Sinh học', grade:6, q:'Bào quan nào chứa DNA của tế bào nhân thực?', opts:['Ti thể','Lục lạp','Nhân tế bào','Lưới nội chất'], ans:2, exp:'DNA nằm trong nhân tế bào (nucleus), bao bọc bởi màng nhân.' },
+        { topic:'Vật lý', grade:6, q:'Đơn vị đo khối lượng trong hệ SI là?', opts:['Newton','Kilogram','Joule','Lít'], ans:1, exp:'Khối lượng đo bằng kilogram (kg) trong hệ SI.' },
+        { topic:'Sinh học', grade:7, q:'Quá trình nào giải phóng năng lượng từ chất hữu cơ trong tế bào?', opts:['Quang hợp','Hô hấp tế bào','Tổng hợp protein','Phân bào'], ans:1, exp:'Hô hấp tế bào: C₆H₁₂O₆+6O₂→6CO₂+6H₂O+ATP (năng lượng).' },
+        { topic:'Hóa học', grade:8, q:'Phân tử nước (H₂O) có bao nhiêu nguyên tử?', opts:['2','3','4','5'], ans:1, exp:'H₂O gồm 2 nguyên tử Hydrogen và 1 nguyên tử Oxygen = 3 nguyên tử.' },
+        { topic:'Vật lý', grade:7, q:'Tốc độ ánh sáng trong chân không xấp xỉ bao nhiêu?', opts:['300 000 km/s','30 000 km/s','3 000 km/s','3 000 000 km/s'], ans:0, exp:'c ≈ 3×10⁸ m/s = 300 000 km/s.' },
+        { topic:'Sinh học', grade:8, q:'Hệ cơ quan nào chịu trách nhiệm trao đổi khí ở người?', opts:['Hệ tiêu hoá','Hệ tuần hoàn','Hệ hô hấp','Hệ bài tiết'], ans:2, exp:'Hệ hô hấp (phổi, khí quản...) đảm nhiệm trao đổi O₂ và CO₂.' },
+        { topic:'Hóa học', grade:8, q:'Chất nào là axit trong số sau?', opts:['NaOH','NaCl','HCl','H₂O'], ans:2, exp:'HCl (axit clohidric) là axit mạnh. NaOH là bazơ; NaCl là muối.' },
+        { topic:'Thiên văn', grade:6, q:'Hành tinh nào lớn nhất trong hệ Mặt Trời?', opts:['Sao Thổ','Sao Mộc','Sao Hải Vương','Trái Đất'], ans:1, exp:'Sao Mộc (Jupiter) là hành tinh lớn nhất, đường kính ~143 000 km.' },
+        { topic:'Vật lý', grade:8, q:'Công thức tính công cơ học là?', opts:['W=m×v','W=F×d','W=m×g','W=F/d'], ans:1, exp:'Công A = F × d (lực × quãng đường dịch chuyển theo phương lực).' },
+      ]
+    },
+    lichsu: {
+      name: 'Lịch Sử & Địa Lý',
+      questions: [
+        { topic:'Lịch sử VN', grade:6, q:'Chiến thắng Bạch Đằng năm 938 do ai lãnh đạo?', opts:['Lý Thường Kiệt','Ngô Quyền','Trần Hưng Đạo','Đinh Bộ Lĩnh'], ans:1, exp:'Ngô Quyền đánh bại quân Nam Hán, kết thúc 1000 năm Bắc thuộc.' },
+        { topic:'Địa lý', grade:6, q:'Đồng bằng sông Cửu Long thuộc hệ thống sông nào?', opts:['Sông Hồng','Sông Mê Kông','Sông Đà','Sông Mã'], ans:1, exp:'Đồng bằng sông Cửu Long do phù sa sông Mê Kông bồi đắp.' },
+        { topic:'Lịch sử VN', grade:7, q:'Nhà Trần thành lập năm nào?', opts:['1009','1226','1428','1527'], ans:1, exp:'Nhà Trần thành lập 1226, do Trần Cảnh lên ngôi thay nhà Lý.' },
+        { topic:'Địa lý', grade:8, q:'Việt Nam có bao nhiêu tỉnh/thành phố trực thuộc TW?', opts:['59','61','63','65'], ans:2, exp:'63 đơn vị: 58 tỉnh + 5 thành phố trực thuộc Trung ương.' },
+        { topic:'Địa lý', grade:7, q:'Dãy núi nào là "mái nhà" của Đông Dương?', opts:['Dãy Hoàng Liên Sơn','Dãy Trường Sơn','Dãy Bắc Sơn','Dãy Con Voi'], ans:0, exp:'Hoàng Liên Sơn với đỉnh Phan Xi Păng (3143m) — cao nhất Đông Dương.' },
+        { topic:'Lịch sử VN', grade:6, q:'Khởi nghĩa Hai Bà Trưng nổ ra năm nào?', opts:['Năm 40 CN','Năm 248 CN','Năm 542 CN','Năm 938 CN'], ans:0, exp:'Khởi nghĩa Hai Bà Trưng năm 40 CN, chống nhà Đông Hán.' },
+        { topic:'Lịch sử VN', grade:7, q:'Ai là người lãnh đạo cuộc kháng chiến chống Tống năm 1077?', opts:['Ngô Quyền','Trần Hưng Đạo','Lý Thường Kiệt','Lê Lợi'], ans:2, exp:'Lý Thường Kiệt đánh bại quân Tống tại sông Như Nguyệt 1077.' },
+        { topic:'Địa lý', grade:6, q:'Việt Nam nằm ở khu vực nào của châu Á?', opts:['Đông Á','Nam Á','Đông Nam Á','Trung Á'], ans:2, exp:'Việt Nam thuộc khu vực Đông Nam Á, bán đảo Đông Dương.' },
+        { topic:'Lịch sử VN', grade:8, q:'Phong trào Cần Vương (1885) nhằm mục đích gì?', opts:['Lật đổ nhà Nguyễn','Giúp vua chống Pháp','Xây dựng nước cộng hoà','Hợp tác với Pháp'], ans:1, exp:'Cần Vương = "giúp vua". Phong trào do vua Hàm Nghi và Tôn Thất Thuyết phát động chống Pháp.' },
+        { topic:'Địa lý', grade:8, q:'Sông nào dài nhất Việt Nam?', opts:['Sông Hồng','Sông Mê Kông (đoạn ở VN: sông Tiền, sông Hậu)','Sông Đà','Sông Cửu Long'], ans:1, exp:'Sông Mê Kông (Cửu Long) dài nhất, dù tổng chiều dài của nó ngoài VN.' },
+        { topic:'Lịch sử VN', grade:6, q:'Nhà nước Văn Lang do ai lập ra?', opts:['Hùng Vương','An Dương Vương','Lạc Long Quân','Ngô Quyền'], ans:0, exp:'Nhà nước Văn Lang do Hùng Vương lập ra, là nhà nước đầu tiên của người Việt.' },
+        { topic:'Địa lý', grade:7, q:'Hà Nội là thủ đô của Việt Nam từ năm nào?', opts:['1010','1858','1945','1975'], ans:0, exp:'Lý Công Uẩn dời đô từ Hoa Lư về Thăng Long (Hà Nội) năm 1010.' },
+        { topic:'Lịch sử TG', grade:7, q:'Cách mạng Pháp nổ ra năm nào?', opts:['1776','1789','1848','1871'], ans:1, exp:'Cách mạng Tư sản Pháp 1789: Phá ngục Bastille, xoá bỏ chế độ phong kiến.' },
+        { topic:'Địa lý', grade:8, q:'Châu lục nào có diện tích lớn nhất thế giới?', opts:['Châu Mỹ','Châu Phi','Châu Á','Châu Âu'], ans:2, exp:'Châu Á: ~44,6 triệu km² — lớn nhất, chiếm 30% diện tích đất liền.' },
+        { topic:'Lịch sử VN', grade:8, q:'Ngày 2/9/1945 là ngày gì?', opts:['Ngày thành lập Đảng CSVN','Ngày Quốc khánh nước CHXHCNVN','Ngày toàn quốc kháng chiến','Ngày giải phóng miền Nam'], ans:1, exp:'2/9/1945: Chủ tịch Hồ Chí Minh đọc Tuyên ngôn Độc lập — Quốc khánh VN.' },
+      ]
+    },
+    anh: {
+      name: 'Tiếng Anh',
+      questions: [
+        { topic:'Thì động từ', grade:6, q:'Choose the correct form: "She ___ to school every day."', opts:['go','goes','going','gone'], ans:1, exp:'Ngôi thứ 3 số ít, thì hiện tại đơn: thêm -s/-es → goes.' },
+        { topic:'Từ vựng', grade:6, q:'What is the past tense of "write"?', opts:['writed','written','wrote','writ'], ans:2, exp:'"Write" là động từ bất quy tắc. Quá khứ đơn: wrote.' },
+        { topic:'Từ vựng', grade:6, q:'Which word is a synonym of "happy"?', opts:['Sad','Joyful','Angry','Tired'], ans:1, exp:'"Joyful" = hạnh phúc, vui mừng — đồng nghĩa với "happy".' },
+        { topic:'Ngữ pháp', grade:7, q:'Choose the correct sentence:', opts:['I am interesting in science.','I am interested in science.','I am interest in science.','I interest in science.'], ans:1, exp:'"Interested" (cảm thấy hứng thú). "Interesting" = gây hứng thú cho người khác.' },
+        { topic:'Ngữ pháp', grade:6, q:'"There is a book on the table." — "on" chỉ điều gì?', opts:['Thời gian','Nguyên nhân','Vị trí / nơi chốn','Hướng đi'], ans:2, exp:'"On" là giới từ chỉ vị trí: cuốn sách ở trên mặt bàn.' },
+        { topic:'Từ vựng', grade:6, q:'What is the plural of "child"?', opts:['childs','childes','children','childrens'], ans:2, exp:'"Child" → "children" — danh từ bất quy tắc. Không có "childrens".' },
+        { topic:'Thì động từ', grade:7, q:'Complete: "He has lived in Hanoi ___ 2010."', opts:['for','since','during','while'], ans:1, exp:'"Since" đi với mốc thời gian cụ thể (2010). "For" đi với khoảng thời gian.' },
+        { topic:'Ngữ pháp', grade:7, q:'Which sentence uses the passive voice correctly?', opts:['The book writes by Nam.','The book was written by Nam.','The book is write by Nam.','Nam written the book.'], ans:1, exp:'Passive voice: be + past participle. "was written" là đúng.' },
+        { topic:'Từ vựng', grade:7, q:'What does "generous" mean?', opts:['Rộng lượng, hào phóng','Tức giận','Buồn bã','Thông minh'], ans:0, exp:'"Generous" = sẵn sàng cho đi, hào phóng, rộng lượng.' },
+        { topic:'Thì động từ', grade:8, q:'Choose the correct form: "By 2030, she ___ her degree."', opts:['will finish','will have finished','has finished','finished'], ans:1, exp:'Future perfect: will have + V3/ed — diễn tả việc hoàn thành trước một mốc tương lai.' },
+        { topic:'Ngữ pháp', grade:8, q:'Combine: "The man is my uncle. He lives next door."', opts:['The man who lives next door is my uncle.','The man which lives next door is my uncle.','The man whom lives next door is my uncle.','The man where lives next door is my uncle.'], ans:0, exp:'Mệnh đề quan hệ chỉ người dùng "who" (không thể dùng which/whom/where).' },
+        { topic:'Từ vựng', grade:8, q:'The antonym of "ancient" is?', opts:['Old','Modern','Historic','Traditional'], ans:1, exp:'"Ancient" = cổ xưa. Antonym (trái nghĩa) = "modern" (hiện đại).' },
+        { topic:'Ngữ pháp', grade:7, q:'Fill in: "If it ___ tomorrow, we will cancel the trip."', opts:['rain','rains','will rain','rained'], ans:1, exp:'Câu điều kiện loại 1: If + hiện tại đơn, will + V. → "rains".' },
+        { topic:'Thì động từ', grade:6, q:'Which sentence is in the past continuous tense?', opts:['She sings a song.','She sang a song.','She was singing a song.','She has sung a song.'], ans:2, exp:'Past continuous: was/were + V-ing. → "was singing".' },
+        { topic:'Từ vựng', grade:8, q:'What is the meaning of "perseverance"?', opts:['Sự thông minh','Sự kiên trì','Sự nhút nhát','Sự hào phóng'], ans:1, exp:'"Perseverance" = sự kiên trì, bền bỉ vượt qua khó khăn.' },
+      ]
+    }
+  };
+
+  // ─── STATE ────────────────────────────────────────────────────────────────
+  const params  = new URLSearchParams(location.search);
+  const subKey  = params.get('subject') || 'toan';
+  const subject = DATA[subKey] || DATA.toan;
+  const questions = subject.questions;
+  const SESSION_KEY = `quiz_${subKey}`;
+
+  let state = {
+    current: 0,
+    answers: new Array(questions.length).fill(null),
+  };
+
+  // restore session
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(SESSION_KEY));
+    if (saved && Array.isArray(saved.answers) && saved.answers.length === questions.length) {
+      state = saved;
+    }
+  } catch (_) {}
+
+  function save() {
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(state));
+  }
+
+  // ─── RENDER ───────────────────────────────────────────────────────────────
+  const container = document.getElementById('quizContainer');
+  const navButtons = document.getElementById('navButtons');
+  const progressFill = document.getElementById('progressFill');
+  const navSubject = document.getElementById('navSubject');
+  const navProgressEl = document.getElementById('navProgress');
+  const btnPrev = document.getElementById('btnPrev');
+  const btnNext = document.getElementById('btnNext');
+
+  const LABELS = ['A', 'B', 'C', 'D'];
+
+  navSubject.textContent = subject.name.toUpperCase();
+  navButtons.style.display = 'flex';
+
+  function render() {
+    const i  = state.current;
+    const q  = questions[i];
+    const chosen = state.answers[i];
+    const answered = chosen !== null;
+    const total = questions.length;
+
+    // update top bar
+    navProgressEl.textContent = `${i + 1} / ${total}`;
+    progressFill.style.width = `${((i + 1) / total) * 100}%`;
+
+    // prev button
+    btnPrev.disabled = i === 0;
+
+    // next / finish button
+    const isLast = i === total - 1;
+    if (isLast) {
+      btnNext.textContent = '';
+      btnNext.innerHTML = 'Xem kết quả <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 2l5 5-5 5"/></svg>';
+      btnNext.className = 'btn btn-finish';
+    } else {
+      btnNext.innerHTML = 'Câu tiếp <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 2l5 5-5 5"/></svg>';
+      btnNext.className = 'btn btn-primary';
+    }
+    btnNext.disabled = !answered;
+
+    // build question HTML
+    const optionsHTML = q.opts.map((opt, idx) => {
+      let cls = 'option';
+      let icon = '';
+      if (answered) {
+        cls += ' locked';
+        if (idx === q.ans) {
+          cls += chosen === idx ? ' correct' : ' show-answer';
+          icon = '<svg class="option-icon" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 7l4 4 6-6"/></svg>';
+        } else if (idx === chosen && chosen !== q.ans) {
+          cls += ' wrong';
+          icon = '<svg class="option-icon" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l8 8M11 3l-8 8"/></svg>';
+        }
+      } else if (idx === chosen) {
+        cls += ' selected';
+      }
+      return `<button class="${cls}" data-idx="${idx}" role="radio" aria-checked="${idx === chosen}">
+        <span class="option-label">${LABELS[idx]}</span>
+        <span class="option-text">${opt}</span>
+        ${icon}
+      </button>`;
+    }).join('');
+
+    const expStyle = answered && q.exp ? 'class="explanation visible"' : 'class="explanation"';
+    const expHTML  = q.exp ? `<div ${expStyle}><div class="explanation-label">Giải thích</div><p class="explanation-text">${q.exp}</p></div>` : '';
+
+    container.innerHTML = `
+      <div class="question-block reveal">
+        <div class="question-num">Câu ${i + 1}</div>
+        <p class="question-text">${q.q}</p>
+      </div>
+      <div class="options-list reveal">
+        ${optionsHTML}
+      </div>
+      ${expHTML}
+      <div class="keyboard-hint reveal">
+        <span class="key"><kbd>A</kbd><kbd>B</kbd><kbd>C</kbd><kbd>D</kbd> chọn đáp án</span>
+        <span class="key"><kbd>Enter</kbd> câu tiếp</span>
+        <span class="key"><kbd>←</kbd> câu trước</span>
+      </div>
+    `;
+
+    // attach option clicks
+    container.querySelectorAll('.option').forEach(btn => {
+      btn.addEventListener('click', () => selectAnswer(+btn.dataset.idx));
+    });
+
+    // trigger reveal
+    requestAnimationFrame(() => {
+      container.querySelectorAll('.reveal').forEach((el, n) => {
+        el.style.transitionDelay = `${n * 50}ms`;
+        requestAnimationFrame(() => el.classList.add('visible'));
+      });
+    });
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function selectAnswer(idx) {
+    if (state.answers[state.current] !== null) return;
+    state.answers[state.current] = idx;
+    save();
+    render();
+  }
+
+  function goNext() {
+    if (state.answers[state.current] === null) return;
+    if (state.current === questions.length - 1) {
+      goResults();
+    } else {
+      state.current++;
+      save();
+      render();
+    }
+  }
+
+  function goPrev() {
+    if (state.current > 0) {
+      state.current--;
+      save();
+      render();
+    }
+  }
+
+  function goResults() {
+    const correct = state.answers.filter((a, i) => a === questions[i].ans).length;
+    sessionStorage.setItem(`result_${subKey}`, JSON.stringify({
+      subject: subKey,
+      subjectName: subject.name,
+      answers: state.answers,
+      questions: questions,
+      total: questions.length,
+      correct,
+      timestamp: Date.now(),
+    }));
+    location.href = `results.html?subject=${subKey}`;
+  }
+
+  // ─── EVENTS ───────────────────────────────────────────────────────────────
+  btnNext.addEventListener('click', goNext);
+  btnPrev.addEventListener('click', goPrev);
+
+  document.addEventListener('keydown', e => {
+    const tag = document.activeElement.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
+    if (['1','2','3','4'].includes(e.key)) {
+      selectAnswer(+e.key - 1);
+    } else if (['a','b','c','d'].includes(e.key.toLowerCase())) {
+      selectAnswer(['a','b','c','d'].indexOf(e.key.toLowerCase()));
+    } else if (e.key === 'Enter') {
+      goNext();
+    } else if (e.key === 'ArrowLeft') {
+      goPrev();
+    } else if (e.key === 'ArrowRight') {
+      goNext();
+    }
+  });
+
+  // ─── INIT ─────────────────────────────────────────────────────────────────
+  render();
+  </script>
+</body>
+</html>
